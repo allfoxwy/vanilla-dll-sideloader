@@ -16,6 +16,7 @@ DWORD WINAPI DetourGetVersion()
         // We don't really care if sideloading failed. Ignoring return values.
         LoadLibraryW(L"VfPatcher.dll");
         LoadLibraryW(L"SuperWoWhook.dll");
+        LoadLibraryW(L"VanillaMultiMonitorFix.dll");
 
         HMODULE handle = LoadLibraryW(L"nampower.dll");
         if (handle) {
