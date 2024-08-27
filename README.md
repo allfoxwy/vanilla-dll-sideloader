@@ -2,7 +2,7 @@
 
 This DLL would attempt loading [Vanilla Fixes](https://github.com/hannesmann/vanillafixes), [SuperWoW](https://github.com/balakethelock/SuperWoW), [nampower](https://github.com/namreeb/nampower) and [VanillaMultiMonitorFix](https://github.com/Mates1500/VanillaMultiMonitorFix) when WoW Vanilla game start.
 
-This loader is distinguished because it is NOT based on memory injection. Security software would love this loader more. 
+This loader is distinguished because it is NOT based on memory injection.
 
 It is intented to be paired use with [add-dll-to-exe](https://github.com/allfoxwy/add-dll-to-exe). So that when WoW.exe start, this DLL would detour GetVersion() Win32 API.
 
