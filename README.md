@@ -1,6 +1,10 @@
 # vanilla-dll-sideloader
 
-This DLL would attempt loading [Vanilla Fixes](https://github.com/hannesmann/vanillafixes), [SuperWoW](https://github.com/balakethelock/SuperWoW), [nampower](https://github.com/namreeb/nampower) and [VanillaMultiMonitorFix](https://github.com/Mates1500/VanillaMultiMonitorFix) when WoW Vanilla game start.
+This is a loader program for WoW Vanilla. It would attempt loading [Vanilla Fixes](https://github.com/hannesmann/vanillafixes), [SuperWoW](https://github.com/balakethelock/SuperWoW), [nampower](https://github.com/namreeb/nampower) and [VanillaMultiMonitorFix](https://github.com/Mates1500/VanillaMultiMonitorFix) when game start.
+
+To load a customized mod not known to it, you could rename mod with "WoWmod" in its name. For example `my-mod.WoWmod.dll`.
+
+Loader would search ***current working directory*** for mods.
 
 This loader is distinguished because it is NOT based on memory injection.
 
