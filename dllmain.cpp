@@ -16,10 +16,16 @@ namespace fs = std::filesystem;
 std::wstring utf8_to_utf16(const std::string& utf8);
 
 typedef DWORD(WINAPI* GETVERSION)();
+typedef void(__fastcall* CGGameUI__EnterWorld)(void);
+typedef void(*MODULE_ENTERWORLD)(void);
 
 GETVERSION p_original_GetVersion = NULL;
+CGGameUI__EnterWorld p_EnterWorld = reinterpret_cast<CGGameUI__EnterWorld>(0x4908C0); // Called after Every Loading screen.
+CGGameUI__EnterWorld p_original_EnterWorld = NULL;
 
-static DWORD WINAPI detoured_GetVersion()
+vector<HMODULE> loaded_modules;
+
+DWORD WINAPI detoured_GetVersion()
 {
     static bool firstTime = true;
 
@@ -47,6 +53,7 @@ static DWORD WINAPI detoured_GetVersion()
                 HMODULE h = LoadLibraryW(utf8_to_utf16(mod.u8string()).data());
                 if (h != NULL) {
                     successful.push_back(mod);
+                    loaded_modules.push_back(h);
                 }
             }
 
@@ -67,6 +74,23 @@ static DWORD WINAPI detoured_GetVersion()
     return p_original_GetVersion();
 }
 
+void __fastcall detoured_EnterWorld(void) {
+    static bool firstTime = true;
+    if (firstTime) {
+        firstTime = false;
+
+        for (auto m : loaded_modules) {
+            MODULE_ENTERWORLD p_module_EnterWorld = reinterpret_cast<MODULE_ENTERWORLD>(GetProcAddress(m, "FirstEnterWorld"));
+            if (p_module_EnterWorld) {
+                p_module_EnterWorld();
+            }
+        }
+    }
+
+    return p_original_EnterWorld();
+}
+
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -86,6 +110,14 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         }
         if (MH_EnableHook(&GetVersion) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling loading function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
+        if (MH_CreateHook(p_EnterWorld, &detoured_EnterWorld, reinterpret_cast<LPVOID*>(&p_original_EnterWorld)) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for EnterWorld function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
+        if (MH_EnableHook(p_EnterWorld) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling EnterWorld function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
         break;
