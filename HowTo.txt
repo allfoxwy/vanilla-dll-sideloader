@@ -1,10 +1,10 @@
-This program add sideload memory mods capability to WoW.exe
+This program add sideload memory-mods capability to WoW.exe
 
-You could put it under same folder with WoW.exe, and run "Enable sideload-DLL.exe" to generate "WoW_sideload-DLL.exe". It's a one-time enable step. You could then start game with generated WoW_sideload-DLL.exe.
+You could put it under same folder with WoW.exe, and run "Enable sideload-DLL.exe" to generate "WoW_sideload-DLL.exe". It's an one-time enabling step. You could then start game with generated WoW_sideload-DLL.exe.
 
-Currently it would try load VfPatcher.dll nampower.dll SuperWoWhook.dll VanillaMultiMonitorFix.dll
+It would try load ".dll" files with "Vanilla1121mod" in their name when game start.
 
-You could delete "Enable sideload-DLL.exe" after enabling. This file is huge because Node.js is big nowdays. My working code in it is in fact less than 15kb.
+You could delete "Enable sideload-DLL.exe" after enabling. This file is huge because Node.js is big nowdays.
 
 Source of "Enable sideload-DLL.exe" is at https://github.com/allfoxwy/add-dll-to-exe/tree/vanilla-dll-sideloader
 Source of "sideload-DLL.dll" is at https://github.com/allfoxwy/vanilla-dll-sideloader
