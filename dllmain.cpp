@@ -1,6 +1,10 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 
+#include "processthreadsapi.h"
+#include "synchapi.h"
+#include "libloaderapi.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -24,6 +28,7 @@ CGGameUI__EnterWorld p_EnterWorld = reinterpret_cast<CGGameUI__EnterWorld>(0x490
 CGGameUI__EnterWorld p_original_EnterWorld = NULL;
 
 vector<HMODULE> loaded_modules;
+static HMODULE hSelf = 0;
 
 DWORD WINAPI detoured_GetVersion()
 {
@@ -74,20 +79,32 @@ DWORD WINAPI detoured_GetVersion()
     return p_original_GetVersion();
 }
 
+DWORD WINAPI threaded_selfEject(LPVOID lpParameter) {
+    HMODULE* p_hSelf = static_cast<HMODULE*>(lpParameter);
+
+    Sleep(3000); // Wait a few seconds for detoured_EnterWorld() to return
+
+    FreeLibraryAndExitThread(*p_hSelf, 0);
+}
+
 void __fastcall detoured_EnterWorld(void) {
+    p_original_EnterWorld();
+
     static bool firstTime = true;
     if (firstTime) {
         firstTime = false;
-
+        
         for (auto m : loaded_modules) {
             MODULE_ENTERWORLD p_module_EnterWorld = reinterpret_cast<MODULE_ENTERWORLD>(GetProcAddress(m, "FirstEnterWorld"));
             if (p_module_EnterWorld) {
                 p_module_EnterWorld();
             }
         }
-    }
 
-    return p_original_EnterWorld();
+        // We done all our job, starting self eject
+        CreateThread(NULL, 0, &threaded_selfEject, &hSelf, 0, NULL);
+    }
+    return;
 }
 
 
@@ -99,30 +116,45 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
+
         DisableThreadLibraryCalls(hModule);
+
+        hSelf = hModule; // Save handle for later self eject
+
         if (MH_Initialize() != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to initialize MinHook library.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to initialize MinHook.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
         if (MH_CreateHook(&GetVersion, &detoured_GetVersion, reinterpret_cast<LPVOID*>(&p_original_GetVersion)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for loading function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
-        if (MH_EnableHook(&GetVersion) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling loading function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            return FALSE;
-        }
         if (MH_CreateHook(p_EnterWorld, &detoured_EnterWorld, reinterpret_cast<LPVOID*>(&p_original_EnterWorld)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for EnterWorld function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
-        if (MH_EnableHook(p_EnterWorld) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling EnterWorld function.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling MinHooks.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
         break;
     case DLL_PROCESS_DETACH:
-        MH_Uninitialize();
+        if (MH_DisableHook(MH_ALL_HOOKS) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to disable MinHook. Game might crash later.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
+        if (MH_RemoveHook(p_EnterWorld) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to remove hook for EnterWorld function. Game might crash later.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
+        if (MH_RemoveHook(&GetVersion) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to remove hook for loading function. Game might crash later.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
+        if (MH_Uninitialize() != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to unintialize MinHook. Game might crash later.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
         break;
     }
     return TRUE;
