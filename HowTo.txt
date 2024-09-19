@@ -1,10 +1,13 @@
-This program add sideload memory-mods capability to WoW.exe
 
-You could put it under same folder with WoW.exe, and run "Enable sideload-DLL.exe" to generate "WoW_sideload-DLL.exe". It's an one-time enabling step. You could then start game with generated WoW_sideload-DLL.exe.
+1- Put all files under same folder with WoW.exe
+2- Run "Enable sideload-DLL.exe" to enable included loader
+3- Start game with "WoW_sideload-DLL.exe"
+4- You could now delete "Enable sideload-DLL.exe"
 
-It would try load ".dll" files with "Vanilla1121mod" in their name when game start.
+Included loader would read "dlls.txt" to decide which mod to load. This config file is the same as VanillaFixes loader.
 
-You could delete "Enable sideload-DLL.exe" after enabling. This file is huge because Node.js is big nowdays.
+And yes, you could use VanillaFixes loader for UnitXP_SP3.
 
-Source of "Enable sideload-DLL.exe" is at https://github.com/allfoxwy/add-dll-to-exe/tree/vanilla-dll-sideloader
+Source of "Enable sideload-DLL.exe" is at https://github.com/allfoxwy/add-dll-to-exe
 Source of "sideload-DLL.dll" is at https://github.com/allfoxwy/vanilla-dll-sideloader
+Source of "UnitXP_SP3.Vanilla1121mod.dll" is at https://github.com/allfoxwy/UnitXP_SP3

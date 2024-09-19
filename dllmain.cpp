@@ -9,8 +9,10 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include <cstdlib>
 
 #include "MinHook.h"
+#include "textfile.h"
 
 #pragma warning(disable: 4996)
 
@@ -37,41 +39,65 @@ DWORD WINAPI detoured_GetVersion()
     if (firstTime) {
         firstTime = false;
 
+        wchar_t tempWoW_exe[MAX_PATH];
+        if (GetModuleFileName(NULL, tempWoW_exe, MAX_PATH) == 0) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to get WoW.exe path. Nothing is loaded.").data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return p_original_GetVersion();
+        }
+
+        fs::path WoW_exe{ tempWoW_exe };
+
         vector<fs::path> load_list;
 
-        for (auto const& dir_entry : fs::directory_iterator{ fs::current_path() }) {
-            if (dir_entry.is_directory() == false) {
-                auto p = dir_entry.path();
-                auto name = p.stem().u8string();
-                auto extension = p.extension().u8string();
+        fs::path configFilename{ u8"dlls.txt" };
 
-                if (extension == u8".dll" && name.find(u8"Vanilla1121mod") != name.npos) {
-                    load_list.push_back(p);
-                }
-            }
+        int linesRead = 0;
+        LPWSTR* vanillaFixesLoadList = FromTextFile(utf8_to_utf16((WoW_exe.parent_path() / configFilename).u8string()).data(), &linesRead, TRUE);
+        for (int i = 0; i < linesRead; ++i) {
+            fs::path p{ vanillaFixesLoadList[i] };
+            load_list.push_back(p);
         }
+        free(vanillaFixesLoadList);
 
         if (load_list.size() > 0) {
             vector<fs::path> successful;
+            vector<fs::path> failed;
 
             for (auto const& mod : load_list) {
-                HMODULE h = LoadLibraryW(utf8_to_utf16(mod.u8string()).data());
+                HMODULE test = GetModuleHandleW(utf8_to_utf16(mod.filename().u8string()).data());
+                if (test != NULL) {
+                    // Skip already loaded modules
+                    continue;
+                }
+
+                HMODULE h = LoadLibraryW(utf8_to_utf16((WoW_exe.parent_path() / mod.filename()).u8string()).data());
                 if (h != NULL) {
                     successful.push_back(mod);
                     loaded_modules.push_back(h);
+
+                    // nampower require additional loading step
+                    if (mod.filename().u8string().find(u8"nampower") != string::npos) {
+                        typedef DWORD(*PLOAD)(void);
+                        PLOAD pLoad = (PLOAD)GetProcAddress(h, "Load");
+                        if (pLoad) {
+                            pLoad();
+                        }
+                    }
+                }
+                else {
+                    failed.push_back(mod);
                 }
             }
 
-            if (successful.size() > 0) {
-                wstringstream message;
-
-                message << utf8_to_utf16(u8"These following mods have been loaded into game and executed:") << endl << endl;
-                for (auto const& mod : successful) {
-                    message << utf8_to_utf16(mod.filename().u8string()) << endl;
+            if (failed.size() > 0) {
+                stringstream ss;
+                ss << u8"Some mods have failed to load:" << endl << endl;
+                for (auto const& mod : failed) {
+                    ss << mod.u8string() << endl;
                 }
-                message << endl << utf8_to_utf16(u8"Please beware that mods are powerful tool and use them at your own risk. Applying arbitrary mods onto Azeroth could lead into Burning Legion invasion or crucial information damage/leak.");
-
-                //MessageBoxW(NULL, message.str().data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+                ss << endl << u8"You could edit \"dlls.txt\" file in game's folder to disable them. Game would start without them. Enjoy.";
+                
+                MessageBoxW(NULL, utf8_to_utf16(ss.str()).data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             }
         }
     }
