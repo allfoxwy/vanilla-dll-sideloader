@@ -97,7 +97,7 @@ DWORD WINAPI detoured_GetVersion()
                 }
                 ss << endl << u8"You could edit \"dlls.txt\" file in game's folder to disable them. Game would start without them. Enjoy.";
                 
-                MessageBoxW(NULL, utf8_to_utf16(ss.str()).data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+                // MessageBoxW(NULL, utf8_to_utf16(ss.str()).data(), utf8_to_utf16(u8"Vanilla DLL mod sideloader").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             }
         }
     }
