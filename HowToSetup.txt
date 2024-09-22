@@ -1,0 +1,27 @@
+To setup:
+1- Put all files under same folder with WoW.exe
+2- Run "Enable sideload-DLL.exe" to enable loader
+3- Start game with "WoW_sideload-DLL.exe"
+4- You could now delete "Enable sideload-DLL.exe"
+
+You could read more info about usage at https://github.com/allfoxwy/UnitXP_SP3
+
+
+
+
+About loader:
+"sideload-DLL.dll" is vanilla-dll-sideloader: https://github.com/allfoxwy/vanilla-dll-sideloader
+It is capable of loading other mobs such as VanillaFixes, VanillaMultiMonitorFix, etc....
+You could add mod names which you wish to load into "dlls.txt", such as "VfPatcher.dll", "UnitXP_SP3.dll", etc...
+Currently as there is not very much mods available, the loading sequence order is free for all. There is no known conflict yet.
+
+Also, you could use VanillaFixes loader to load UnitXP_SP3 either.
+Both VanillaFixes loader and vanilla-dll-sideloader read the same "dlls.txt" file to decide which mod to load.
+And both of them is capable of loading each other.
+Pick the one you like.
+
+
+
+Source of "Enable sideload-DLL.exe" is at https://github.com/allfoxwy/add-dll-to-exe
+Source of "sideload-DLL.dll" is at https://github.com/allfoxwy/vanilla-dll-sideloader
+Source of "UnitXP_SP3.dll" is at https://github.com/allfoxwy/UnitXP_SP3
