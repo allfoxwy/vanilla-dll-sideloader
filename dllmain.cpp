@@ -76,12 +76,10 @@ DWORD WINAPI detoured_GetVersion()
                     loaded_modules.push_back(h);
 
                     // nampower require additional loading step
-                    if (mod.filename().u8string().find(u8"nampower") != string::npos) {
-                        typedef DWORD(*PLOAD)(void);
-                        PLOAD pLoad = (PLOAD)GetProcAddress(h, "Load");
-                        if (pLoad) {
-                            pLoad();
-                        }
+                    typedef DWORD(*PLOAD)(void);
+                    PLOAD pLoad = (PLOAD)GetProcAddress(h, "Load");
+                    if (pLoad) {
+                        pLoad();
                     }
                 }
                 else {
